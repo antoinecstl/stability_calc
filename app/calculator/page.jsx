@@ -2,13 +2,19 @@
 
 import { useState } from 'react';
 import * as math from 'mathjs';
+import nerdamer from 'nerdamer';
+import 'nerdamer/Algebra.js';
+import 'nerdamer/Calculus.js';
+import 'nerdamer/Solve.js';
 
 export default function calculator() {
     const [matrixA, setMatrixA] = useState(''); // État pour la matrice A
     const [matrixB, setMatrixB] = useState('');
+    const [charEquation, setCharEquation] = useState('');
     const [eigenvalues, setEigenvalues] = useState([]);
 
-  const calculateEigenvalues = () => {
+
+  const calculateLongitudinal = () => {
     // Initialisation des données géométriques
     const S = 241.5; // Surface de l'aile, m²
     const b = 43.4; // Envergure, m
@@ -78,11 +84,25 @@ export default function calculator() {
     const g = 9.81; // Accélération gravitationnelle, m/s²
     const q = 0.5 * rho * U0 ** 2; // Pression dynamique
 
-    const formatMatrix = (matrix) => {
-        return matrix.toArray().map(row => 
-            row.map((element) => element.toFixed(2)).join('\t') // Ajustez le nombre de décimales comme souhaité
-        ).join('\n');
-    };
+    const matrixToString = (matrix) => {
+      const rows = matrix.toArray();
+      let maxLength = 0;
+
+      // Trouver la longueur maximale d'un élément dans la matrice pour l'alignement
+      rows.forEach(row => {
+          row.forEach(element => {
+              const length = element.toFixed(3).toString().length;
+              if (length > maxLength) maxLength = length;
+          });
+      });
+
+      // Convertir chaque élément en chaîne et aligner le tout
+      return rows.map(row =>
+          '| ' + row.map(element =>
+              element.toFixed(3).toString().padStart(maxLength, ' ')
+          ).join(' ') + ' |'
+      ).join('\n');
+  };
 
     // Utilisation de mathjs pour les opérations matricielles
     const matA = math.matrix([
@@ -100,12 +120,11 @@ export default function calculator() {
         [0, 0]
       ]);
 
-    // Affichage des matrices pour vérification
-    console.log('A matrix:', matA.toString());
-    console.log('B matrix:', matB.toString());
+    setMatrixA(matrixToString(matA));
+    setMatrixB(matrixToString(matB));
 
-    setMatrixA(formatMatrix(matA));
-    setMatrixB(formatMatrix(matB));
+    // Update the state with the characteristic equation
+    setCharEquation(`Characteristic equation: ${equationCaracteristique4x4(matrix4x4)}`);
 
     // Calcul des valeurs propres de la matrice A
     const evals = math.eigs(matA).values;
@@ -127,15 +146,42 @@ export default function calculator() {
 
     return (
         <div>
-          <button className='bg-primary-500' onClick={calculateEigenvalues}>Calculate Eigenvalues</button>
+          <button className='bg-primary-500 p-1 text-white rounded-lg my-4' onClick={calculateLongitudinal}>Calculate</button>
           <div className='text-white'>
-            <p>Matrix A:</p>
-            <pre>{matrixA}</pre> {/* Affichage de la matrice A */}
-            <p>Matrix B:</p>
-            <pre>{matrixB}</pre> {/* Affichage de la matrice B */}
+            <h1 className='text-start text-heading4-semibold my-4'> 1. The aircraft matrix A and control matrix B of aircraft in longitudinal motion</h1>
+            <div className='grid sm:grid-cols-2 gap-10'>
+              <div className='bg-slate-900 hover:bg-slate-800/80 transition ease-in-out delay-50 duration-200 p-6 rounded-xl mx-auto'>
+                <p>Matrix A:</p>
+                <pre>{matrixA}</pre>
+              </div>
+              <div className='bg-slate-900 hover:bg-slate-800/80 transition ease-in-out delay-50 duration-200 p-6 rounded-xl mx-auto'>
+                <p>Matrix B:</p>
+                <pre>{matrixB}</pre>
+              </div>
+            </div>
+            
+            <h1 className='text-start text-heading4-semibold my-4'> 2. The characteristic equation</h1>
+            <div className=' text-center bg-slate-900 hover:bg-slate-800/80 transition ease-in-out delay-50 duration-200 p-6 rounded-xl mx-auto'>
+              <p>{charEquation}</p>
+            </div>
+            <h1 className='text-start text-heading4-semibold my-4'> 3. The eigenvalues (roots of equation) of the system</h1>
             {eigenvalues.map((val, index) => (
             <p key={index}>{val}</p>
             ))}
+
+            <h1 className='text-start text-heading4-semibold mt-4'>4. Different modes of longitudinal stability </h1>
+            <h2 className='text-start text-base-semibold ml-8'>a. Short period mode (Natural Frequency, Damping Factor)</h2>
+            <h2 className='text-start text-base-semibold ml-8'>b. Phugoid mode (Natural Frequency, Damping Factor)</h2>
+
+            <h1 className='text-start text-heading4-semibold mt-4'>5. Curves of longitudinal motion:</h1>
+            <h2 className='text-start text-base-semibold ml-8'>a. Axial velocity in function of time</h2>
+            <h2 className='text-start text-base-semibold ml-8'>b. Angle of attack</h2>
+            <h2 className='text-start text-base-semibold ml-8'>c. Pitch rate</h2>
+            <h2 className='text-start text-base-semibold ml-8'>d. Pitch angle</h2>
+
+            <h1 className='text-start text-heading4-semibold my-4'>6. Transfer Functions of Each variable</h1>
+
+
           </div>
         </div>
       );
